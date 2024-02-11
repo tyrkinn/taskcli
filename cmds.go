@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/kancli"
+	kancli "github.com/tyrkinn/kancli"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
@@ -188,11 +188,19 @@ var kanbanCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
 		todoCol := kancli.NewColumn(tasksToItems(todos), todo, true)
 		iprCol := kancli.NewColumn(tasksToItems(ipr), inProgress, false)
 		doneCol := kancli.NewColumn(tasksToItems(finished), done, false)
-		board := kancli.NewDefaultBoard([]kancli.Column{todoCol, iprCol, doneCol})
+
+		onMoveItem := func(msg kancli.MoveMsg) {
+			s := status(msg.I)
+			item := msg.Item.(task)
+			item.merge(task{Status: s.String()})
+			t.update(item)
+		}
+
+		board := kancli.NewDefaultBoard([]kancli.Column{todoCol, iprCol, doneCol}, onMoveItem)
+
 		p := tea.NewProgram(board)
 		_, err = p.Run()
 		return err
